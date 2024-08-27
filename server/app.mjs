@@ -1,29 +1,32 @@
 import express from "express";
 import serverless from "serverless-http";
+import { AuthService } from "@genezio/auth";
 
 const app = express();
+const secret = "Cats are the best!";
+const otherSecret = "Cats are also the best!";
 
-app.get("/", (req, res) => {
-    res.send("Hello World from Express!");
+async function checkAuth(req, res, next) {
+    try {
+        const token = req.headers.authorization.split(' ')[1];
+        await AuthService.getInstance().userInfoForToken(token)
+        next()
+    } catch (error) {
+        res.status(401).send({
+            message: "Unauthorized",
+        });
+    }
+}
+
+app.get("/secret1", checkAuth, async function (_req, res, _next) {
+    res.send({
+        message: `The secret is: ${secret}`,
+    });
 });
 
-app.get("/hello", async function (req, res, next) {
-    const ipLocation = await fetch("http://ip-api.com/json/")
-        .then((res) => res.json())
-        .catch(() => ({status: "fail"}));
-
-    if (ipLocation.status === "fail") {
-        return `Hello! Failed to get the server location :(`;
-    }
-
-    const formattedTime = new Date().toLocaleString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-    });
-
+app.get("/secret2", checkAuth, async function (_req, res, _next) {
     res.send({
-        message: `Hello ${req.query.name}! This response was served from ${ipLocation.city}, ${ipLocation.country} (${ipLocation.lat}, ${ipLocation.lon}) at ${formattedTime}`,
+        message: `The other secret is: ${otherSecret}`,
     });
 });
 

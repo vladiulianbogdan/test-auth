@@ -1,3 +1,6 @@
+name: test-auth
+region: eu-central-1
+yamlVersion: 2
 backend:
     functions:
         - entry: app.mjs
@@ -15,6 +18,8 @@ backend:
 frontend:
     environment:
         VITE_API_URL: ${{ backend.functions.express.url }}
+        VITE_AUTH_TOKEN: ${{ services.authentication.token }}
+        VITE_AUTH_REGION: ${{ services.authentication.region }}
     path: client
     publish: dist
     scripts:
@@ -24,6 +29,14 @@ frontend:
         start:
             - npm install --silent
             - npm run dev --silent
-name: test-auth
-region: eu-central-1
-yamlVersion: 2
+    subdomain: maroon-notable-clam
+services:
+    databases:
+        - name: test-auth-db
+          region: eu-central-1
+          type: postgres-neon
+    authentication:
+        database:
+            name: "test-auth-db"
+        providers:
+            email: true
